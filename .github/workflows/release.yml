@@ -1,0 +1,27 @@
+name: 📦 Release
+description: This workflow is triggered when a new release is published. It calls other workflows to create datamodel dumps and documentation, package the plugin, and update project translations. The release tag is passed as an input to the called workflows, allowing them to upload their outputs as GitHub Release assets if needed.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  datamodel-dumps-documentation:
+    name: Call Datamodel Create Dumps Workflow
+    uses: ./.github/workflows/datamodel-dumps-documentation.yml
+    with:
+      release_tag: ${{ github.event.release.tag_name }}
+
+  plugin-package:
+    name: Call Plugin Package Workflow
+    uses: ./.github/workflows/plugin-package.yml
+    with:
+      release_tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  project-translations:
+    name: Call Project Translations Workflow
+    uses: ./.github/workflows/project-translation-package.yml
+    with:
+      release_tag: ${{ github.event.release.tag_name }}
+    secrets: inherit

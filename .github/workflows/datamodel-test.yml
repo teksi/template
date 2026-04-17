@@ -1,0 +1,137 @@
+name: 🐘 Datamodel | Tests
+description: This workflow runs unit and static tests on the datamodel. The tests are executed in a Docker container with different configurations based on the matrix strategy. The workflow is triggered on pushes to the main branch, pull requests that modify datamodel files, and can also be triggered manually.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - datamodel/**
+      - '.github/workflows/datamodel-test.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - datamodel/**
+      - '.github/workflows/datamodel-test.yml'
+  workflow_dispatch:
+
+
+jobs:
+  version-tests:
+    if: github.event_name == 'pull_request'
+    name: Check versioning
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check changelog versions
+        run: |
+          LATEST_RELEASE=$(gh release view --json tagName -q .tagName | cut -d. -f1-2)
+          echo "Latest release: $LATEST_RELEASE"
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "No release found."
+            exit 1
+          fi
+
+          MODIFIED_FILES=$(git diff --name-only HEAD^1 HEAD)
+          echo "*** Modified files:"
+          echo "$MODIFIED_FILES"
+
+          MODIFIED_CHANGELOGS=$(echo "$MODIFIED_FILES" | grep "^datamodel/changelogs/" || true)
+          echo "Modified changelog files:"
+          echo "$MODIFIED_CHANGELOGS"
+
+          if [ -n "$MODIFIED_CHANGELOGS" ]; then
+            for file in $MODIFIED_CHANGELOGS; do
+              DIR=$(echo "$file" | cut -d'/' -f3)
+              if (( $(echo "$DIR <= ${LATEST_RELEASE}" | bc -l) )); then
+                echo "❌ Error: Changelogs are modified in an already existing release directory: $DIR"
+                exit 1
+              fi
+            done
+          fi
+          echo "✅ Changelog versions are valid"
+
+  datamodel-tests:
+    name: Run unit tests on datamodel
+    runs-on: ubuntu-latest
+
+    env:
+      DEMO_DATA: Aletsch
+      PGSERVICE: pg_temp
+      DB_NAME: temp
+      RUN_TESTS: True
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - modification_ci: false
+          modification_agxx: false
+          webgis: false
+          srid: 2056
+
+        - modification_ci: true
+          modification_agxx: false
+          webgis: false
+          srid: 2056
+
+        - modification_ci: false
+          modification_agxx: true
+          webgis: false
+          srid: 2056
+
+        - modification_ci: false
+          modification_agxx: false
+          webgis: true
+          srid: 2056
+
+        - modification_ci: false
+          modification_agxx: false
+          webgis: false
+          srid: 21781
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Initialize container
+        run: |
+          docker compose up --build -d
+          until docker compose exec db pg_isready -U postgres; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          # create the database
+          docker compose exec db createdb -U postgres ${DB_NAME}
+          docker compose run pum \
+              -vvv -p ${PGSERVICE} -d datamodel install \
+              -p modification_ci ${{ matrix.modification_ci}} \
+              -p modification_agxx ${{ matrix.modification_agxx}} \
+              -p webgis ${{ matrix.webgis}} \
+              -p SRID ${{ matrix.srid }}
+
+      - name: Run tests
+        if: matrix.srid == 2056
+        run:  docker compose run --entrypoint pytest pum datamodel
+
+      - name: Docker logs
+        if: failure()
+        run: docker compose logs pum
+
+  static-tests:
+    name: Run static tests on datamodel
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+    - run: ./datamodel/test/static_tests.sh

@@ -1,0 +1,96 @@
+name: 🔌 Plugin | Package and release
+description: This workflow packages the QGIS plugin and optionally uploads it as a GitHub Release asset if a release tag is provided. It is triggered on pushes to the main branch, pull requests that modify plugin files, and can also be triggered manually or by other workflows.
+
+concurrency:
+  group: plugin-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_call' }}
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - plugin/**
+      - '.github/workflows/plugin-package.yml'
+  workflow_dispatch:
+  workflow_call: # Allows this workflow to be called by other workflows
+    inputs:
+      release_tag:
+        required: false
+        description: 'Release tag to upload plugin as GitHub Release asset'
+        default: ''
+        type: string
+
+jobs:
+  plugin-package:
+    name: Packages and releases plugin
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Qt lrelease
+        run: |
+          sudo apt-get update
+          sudo apt-get install qtbase5-dev qttools5-dev-tools
+
+      - name: Install qgis-plugin-ci
+        run: pip install qgis-plugin-ci>=2.8.6
+
+      - name: 🌍 Push translations
+        if: ${{ github.event_name == 'push' }}
+        run: qgis-plugin-ci push-translation ${{ secrets.TX_TOKEN }}
+
+      - name: Package PyPI Packages
+        run: ./plugin/scripts/package-pip-packages.sh
+
+      - name: Download Interlis libs
+        run: ./plugin/scripts/download-interlis-libs.sh
+
+      - name: Package
+        run: |
+          VERSION=${{ inputs.release_tag || '0.0.0' }}
+          qgis-plugin-ci -v \
+            --no-validation \
+            package ${VERSION} \
+            --allow-uncommitted-changes \
+            --asset-path plugin/teksi_wastewater/libs \
+            --asset-path plugin/teksi_wastewater/interlis/bin \
+            --transifex-token "${{ secrets.TX_TOKEN }}"
+
+      - name : Upload artifact for PR testing
+        id: upload-artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: oqtopus.plugin
+          path: plugin/teksi_wastewater.${{ inputs.release_tag || '0.0.0' }}.zip
+          if-no-files-found: error
+
+      - name: Comment on PR with artifact link
+        if: ${{github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository}}
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: plugin-artifact
+          message: |
+            ## 🔌 Plugin Artifact
+
+            A development build of the plugin is available for testing:
+
+            **[⬇️ Download oqtopus.plugin.zip](${{ steps.upload-artifact.outputs.artifact-url }})**
+
+            > ⚠️ This is a development build from commit ${{ github.event.pull_request.head.sha }}.
+
+      - name: Upload plugin as GitHub Release asset
+        if: ${{ inputs.release_tag != '' }}
+        run: gh release upload "${{ inputs.release_tag }}" plugin/teksi_wastewater.${{ inputs.release_tag || '0.0.0' }}.zip#oqtopus.plugin --repo "$GITHUB_REPOSITORY"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}

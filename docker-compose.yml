@@ -1,0 +1,62 @@
+
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    platform: linux/amd64
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      # making the postgres database accessible for debugging
+      - ${PG_CONTAINER_PORT:-5432}:5432
+    volumes:
+      - .:/usr/src
+      - dump-data:/dump
+      - db-data:/var/lib/postgresql/data
+
+  pum:
+    image: opengisch/pum:${PUM_VERSION:-latest}
+    tty: true
+    stdin_open: true
+    platform: linux/amd64
+    environment:
+      - PGSERVICE=${PGSERVICE:-pg_template}
+    volumes:
+      - .:/pum
+      - ${PGSERVICEFILE:-./datamodel/.docker/.pg_service.conf}:/.pg_service.conf:ro
+    depends_on:
+      - db
+
+  qgis:
+    build:
+      context: .
+      dockerfile: plugin/.docker/Dockerfile
+      args:
+        QGIS_TEST_VERSION: ${QGIS_TEST_VERSION:-3.44-noble}
+    tty: true
+    platform: linux/amd64
+    volumes:
+      - .:/usr/src
+    links:
+      - db
+    profiles:
+      - qgis
+
+  schemaspy:
+    image: schemaspy/schemaspy
+    volumes:
+      - ./datamodel/schemaspy:/output
+      - ./datamodel/schemaspy.properties:/schemaspy.properties
+    depends_on:
+      - db
+    network_mode: "service:db"
+    command: [
+      "-configFile",
+      "/schemaspy.properties"
+    ]
+    user: "${UID}:${GID}"
+    profiles:
+      - schemaspy
+
+volumes:
+  db-data:
+  dump-data:
