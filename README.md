@@ -2,4 +2,4 @@
 DEV template for any future TEKSI module
 
 
-[Project folder](project/README.md)
+[Project folder](project)
