@@ -62,8 +62,8 @@ jobs:
             --no-validation \
             package ${VERSION} \
             --allow-uncommitted-changes \
-            --asset-path plugin/teksi_wastewater/libs \
-            --asset-path plugin/teksi_wastewater/interlis/bin \
+            --asset-path plugin/teksi_template/libs \
+            --asset-path plugin/teksi_template/interlis/bin \
             --transifex-token "${{ secrets.TX_TOKEN }}"
 
       - name : Upload artifact for PR testing
@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: oqtopus.plugin
-          path: plugin/teksi_wastewater.${{ inputs.release_tag || '0.0.0' }}.zip
+          path: plugin/teksi_template.${{ inputs.release_tag || '0.0.0' }}.zip
           if-no-files-found: error
 
       - name: Comment on PR with artifact link
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload plugin as GitHub Release asset
         if: ${{ inputs.release_tag != '' }}
-        run: gh release upload "${{ inputs.release_tag }}" plugin/teksi_wastewater.${{ inputs.release_tag || '0.0.0' }}.zip#oqtopus.plugin --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "${{ inputs.release_tag }}" plugin/teksi_template.${{ inputs.release_tag || '0.0.0' }}.zip#oqtopus.plugin --repo "$GITHUB_REPOSITORY"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}

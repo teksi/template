@@ -34,7 +34,7 @@ jobs:
       DB_NAME: temp
       DEMO_DATA: Aletsch
       COMPOSE_PROFILES: schemaspy
-      COMPOSE_PROJECT_NAME: wastewater
+      COMPOSE_PROJECT_NAME: template
 
     strategy:
       fail-fast: false

@@ -39,7 +39,7 @@ jobs:
       COMPOSE_PROFILES: qgis
       MODULE_NAME: temp
       QGS_PROJECT_TITLE: temp
-      QGS_PROJECT_FILE: teksi_wastewater
+      QGS_PROJECT_FILE: teksi_template
       PGSERVICE: pg_temp
       DB_NAME: temp
 
