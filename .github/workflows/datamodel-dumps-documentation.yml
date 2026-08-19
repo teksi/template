@@ -32,9 +32,9 @@ jobs:
     env:
       PGSERVICE: pg_temp
       DB_NAME: temp
-      DEMO_DATA: Aletsch
+      # DEMO_DATA: Template_demo
       COMPOSE_PROFILES: schemaspy
-      COMPOSE_PROJECT_NAME: template
+      COMPOSE_PROJECT_NAME: temp
 
     strategy:
       fail-fast: false
@@ -53,9 +53,9 @@ jobs:
             sleep 3
           done
           docker compose exec db createdb -U postgres ${DB_NAME}
-          docker compose exec db createdb -U postgres ${DB_NAME}_demo
+          # docker compose exec db createdb -U postgres ${DB_NAME}_demo
           docker compose run pum -vvv -p ${PGSERVICE} -d datamodel install -p SRID 2056
-          docker compose run pum -vvv -p ${PGSERVICE}_demo -d datamodel install -p SRID 2056 --demo-data ${DEMO_DATA}
+          # docker compose run pum -vvv -p ${PGSERVICE}_demo -d datamodel install -p SRID 2056 --demo-data ${DEMO_DATA}
 
       - name: Create dumps
         run: |
@@ -63,8 +63,8 @@ jobs:
           docker compose exec db pg_dump -U postgres --format custom --exclude-schema=public --blobs --compress 5 --file /dump/${DB_NAME}-${VERSION}-db-dump.backup ${DB_NAME}
           docker compose exec db pg_dump -U postgres --format plain --exclude-schema=public --file /dump/${DB_NAME}-${VERSION}-db-dump.sql ${DB_NAME}
           docker compose exec db pg_dump -U postgres --format plain --schema=${DB_NAME}_app --file /dump/${DB_NAME}-${VERSION}-db-app.sql ${DB_NAME}
-          docker compose exec db pg_dump -U postgres --format custom --exclude-schema=public --blobs --compress 5 --file /dump/${DB_NAME}-${VERSION}-db-dump-with-demo.backup ${DB_NAME}_demo
-          docker compose exec db pg_dump -U postgres --format plain --exclude-schema=public --file /dump/${DB_NAME}-${VERSION}-db-dump-with-demo.sql ${DB_NAME}_demo
+          # docker compose exec db pg_dump -U postgres --format custom --exclude-schema=public --blobs --compress 5 --file /dump/${DB_NAME}-${VERSION}-db-dump-with-demo.backup ${DB_NAME}_demo
+          # docker compose exec db pg_dump -U postgres --format plain --exclude-schema=public --file /dump/${DB_NAME}-${VERSION}-db-dump-with-demo.sql ${DB_NAME}_demo
           mkdir -p datamodel/artifacts/
           docker compose cp db:/dump/. ./datamodel/artifacts/
 
