@@ -32,7 +32,7 @@ jobs:
     env:
       PGSERVICE: pg_temp
       DB_NAME: temp
-      DEMO_DATA: Aletsch
+      DEMO_DATA: Template_demo
       COMPOSE_PROFILES: schemaspy
       COMPOSE_PROJECT_NAME: template
 

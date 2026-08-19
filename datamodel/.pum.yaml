@@ -80,5 +80,5 @@ uninstall:
   - code: DROP SCHEMA IF EXISTS temp_app CASCADE;
 
 demo_data:
-  - name: Template
-    file: demo_data/template.sql
+  - name: Template_demo
+    file: demo_data/template_demo.sql
