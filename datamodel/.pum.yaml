@@ -1,0 +1,84 @@
+
+pum:
+  module: temp
+  migration_table_schema: temp_sys
+  minimum_version: 1.4.2
+
+roles:
+  - name: temp_viewer
+    description: Role for users who can view the temp data.
+    permissions:
+      - type: read
+        schemas: [temp_od, temp_vl, temp_sys, temp_app, temp_app_pg2ili]
+
+  - name: temp_user
+    description: Role for users who can view and edit the temp data.
+    inherit: temp_viewer
+    permissions:
+      - type: write
+        schemas: [temp_od, temp_app, temp_app_pg2ili]
+
+  - name: temp_manager
+    description: Role for users who can view and edit the temp data, and manage the temp application.
+    inherit: temp_user
+    permissions:
+      - type: write
+        schemas: [temp_vl]
+
+  - name: temp_sysadmin
+    description: Role for system administrators who can manage the temp application and its configuration.
+    inherit: temp_manager
+    permissions:
+      - type: write
+        schemas: [temp_sys]
+
+
+parameters:
+  - name: SRID
+    type: integer
+    default: 2056
+    description: Coordinate Reference System (CRS) to use for the data. This is used for the geometry column in the database. Default is 2056 (CH1903+ / LV95).
+
+  - name: webgis
+    type: boolean
+    default: false
+    description: enable WebGIS app modification
+    app_only: true
+
+  - name: modification_yaml
+    type: path
+    description: yaml file with app modification definitions
+    app_only: true
+
+  - name: lang_code
+    type: text
+    default: en
+    description: language code for the creation of custom views
+    app_only: true
+    values: [en, de, fr, it]
+
+  - name: oid_prefix
+    type: text
+    default: ch000000
+    description: Object ID prefix for the creation of STANDARDOID
+
+
+dependencies:
+  - name: pirogue
+    minimum_version: 3.0.0
+
+# application:
+#   drop:
+#     - code: DROP SCHEMA IF EXISTS temp_app CASCADE;
+#   create:
+#     - file: app/create_app.py
+
+uninstall:
+  - code: DROP SCHEMA IF EXISTS temp_od CASCADE;
+  - code: DROP SCHEMA IF EXISTS temp_vl CASCADE;
+  - code: DROP SCHEMA IF EXISTS temp_sys CASCADE;
+  - code: DROP SCHEMA IF EXISTS temp_app CASCADE;
+
+demo_data:
+  - name: Template
+    file: demo_data/template.sql
