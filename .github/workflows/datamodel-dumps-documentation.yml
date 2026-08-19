@@ -34,7 +34,7 @@ jobs:
       DB_NAME: temp
       DEMO_DATA: Template_demo
       COMPOSE_PROFILES: schemaspy
-      COMPOSE_PROJECT_NAME: template
+      COMPOSE_PROJECT_NAME: temp
 
     strategy:
       fail-fast: false
