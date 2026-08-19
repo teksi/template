@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DEMO_DATA: Aletsch
+      # DEMO_DATA: Aletsch
       PGSERVICE: pg_temp
       DB_NAME: temp
       RUN_TESTS: True
