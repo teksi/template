@@ -1,0 +1,4 @@
+
+CREATE SCHEMA IF NOT EXISTS temp_sys;
+CREATE SCHEMA temp_vl;
+CREATE SCHEMA temp_od;
