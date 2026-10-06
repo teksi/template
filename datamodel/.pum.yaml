@@ -73,11 +73,11 @@ dependencies:
   - name: pirogue
     minimum_version: 3.0.0
 
-# application:
-#   drop:
-#     - code: DROP SCHEMA IF EXISTS temp_app CASCADE;
-#   create:
-#     - file: app/create_app.py
+application:
+  drop:
+    - code: DROP SCHEMA IF EXISTS temp_app CASCADE;
+  create:
+    - file: app/create_app.py
 
 uninstall:
   - code: DROP SCHEMA IF EXISTS temp_od CASCADE;
