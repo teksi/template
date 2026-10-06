@@ -57,7 +57,7 @@ class Hook(HookBase):
         }
 
         self.execute("CREATE SCHEMA temp_app;")
-        self.run_sql_files_in_folder(self.cwd / "sql_functions")
+        # self.run_sql_files_in_folder(self.cwd / "sql_functions")
 
         # defaults = {"view_schema": "temp_app"}
 
@@ -71,9 +71,6 @@ class Hook(HookBase):
 
         # Audit
         # self.execute(cwd / "audit/audit.sql")
-
-        # Roles
-        self.run_sql_files_in_folder(self.cwd / "roles")
 
     def run_sql_file(self, file_path: str, variables: dict = None):
         with open(file_path) as f:
